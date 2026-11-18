@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Administración de Usuarios{% endblock %}
+
+{% block content %}
+
+<main class="main">
+
+  <!-- ======= Page Title ======= -->
+  <div class="page-title dark-background"
+       style="background-image:url({{ url_for('static', filename='assets/img/hotel/showcase-7.webp') }});">
+    <div class="container position-relative">
+      <h1>Administración de usuarios</h1>
+      <p>Asignación de roles y control de acceso</p>
+      <nav class="breadcrumbs">
+        <ol>
+          <li><a href="/">Inicio</a></li>
+          <li class="current">Usuarios</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ======= Section ======= -->
+  <section class="section">
+    <div class="container" data-aos="fade-up">
+
+      <!-- ======= Card ======= -->
+      <div class="card shadow-sm border-0">
+
+        <!-- Card header -->
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-people me-1"></i> Usuarios del sistema
+          </h5>
+          <span class="badge bg-dark">
+            <i class="bi bi-shield-lock me-1"></i> Administrador
+          </span>
+        </div>
+
+        <!-- Card body -->
+        <div class="card-body p-0">
+          <div class="table-responsive">
+
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Usuario</th>
+                  <th>Email</th>
+                  <th>Rol actual</th>
+                  <th style="width:260px">Cambiar a</th>
+                  <th class="text-end">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                {% for u in usuarios %}
+                <tr>
+
+                  <!-- Usuario -->
+                  <td>
+                    <strong>{{ u.Nombre }}</strong><br>
+                    <small class="text-muted">ID {{ u.Codigo_Usuario }}</small>
+                  </td>
+
+                  <!-- Email -->
+                  <td>{{ u.Correo }}</td>
+
+                  <!-- Rol actual -->
+                  <td>
+                    <span class="badge bg-secondary">
+                      {{ u.rol.Nombre }}
+                    </span>
+                  </td>
+
+                  <!-- Nuevo rol -->
+                  <td>
+                    <select class="form-select form-select-sm rol-select"
+                            data-user-id="{{ u.Codigo_Usuario }}">
+                      <option value="">— Seleccione nuevo rol —</option>
+                      {% for r in roles %}
+                        {% if r.Nombre != u.rol.Nombre %}
+                          <option value="{{ r.Nombre }}">{{ r.Nombre }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </td>
+
+                  <!-- Acción -->
+                  <td class="text-end">
+                    <button class="btn btn-sm btn-success"
+                            onclick="guardarRol(this)">
+                      <i class="bi bi-check-lg"></i> Guardar
+                    </button>
+                  </td>
+
+                </tr>
+                {% endfor %}
+
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script>
+function guardarRol(btn) {
+  const row = btn.closest("tr");
+  const select = row.querySelector(".rol-select");
+  const userId = select.dataset.userId;
+
+  if (!select.value) {
+    alert("Seleccione un nuevo rol antes de guardar");
+    return;
+  }
+
+  fetch(`/admin/usuarios/${userId}/rol`, {
+    method: "PATCH",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ rol: select.value })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      location.reload();
+    } else {
+      alert(data.error || "Error al cambiar rol");
+    }
+  })
+  .catch(() => alert("Error de conexión"));
+}
+</script>
+
+{% endblock %}

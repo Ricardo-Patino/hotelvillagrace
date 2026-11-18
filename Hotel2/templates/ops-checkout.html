@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+
+{% block title %}Operaciones — Check-out | Hotel Villa Grace{% endblock %}
+{% block meta_description %}Módulo de check-out para recepción: pendientes de hoy, búsqueda por documento, desglose y confirmación.{% endblock %}
+
+{% block body_class %}inner-page{% endblock %}
+
+{% block head_extra %}
+<style>
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  .table td, .table th { vertical-align: middle; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title dark-background" data-aos="fade"
+  style="background-image:url({{ url_for('static', filename='assets/img/hotel/showcase-7.webp') }});">
+  <div class="container position-relative">
+    <h1>Operaciones — Check-out</h1>
+    <p class="mb-0">
+      Por defecto se muestran los <strong>check-outs pendientes para hoy</strong>. Puede filtrar por documento.
+    </p>
+    <nav class="breadcrumbs" aria-label="breadcrumbs">
+      <ol>
+        <li><a href="{{ url_for('index_html') }}">Inicio</a></li>
+        <li><a href="{{ url_for('ops_dashboard_html') }}">Recepción</a></li>
+        <li class="current">Check-out</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container" data-aos="fade-up">
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+      <div class="d-none d-md-block">
+        <div class="text-muted small">
+          Seleccione un pendiente (hoy o por búsqueda) para ver desglose y confirmar.
+        </div>
+      </div>
+      <a class="btn btn-outline-secondary" href="{{ url_for('ops_dashboard_html') }}">
+        <i class="bi bi-arrow-left"></i> Volver
+      </a>
+    </div>
+
+    <div id="ui-alert" class="alert d-none alert-dismissible fade show" role="alert">
+      <span id="ui-alert-msg"></span>
+      <button type="button" class="btn-close" aria-label="Close" onclick="hideUIAlert()"></button>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+              <div>
+                <h5 class="card-title mb-1">Pendientes para hoy</h5>
+                <div class="text-muted small">
+                  Lista de estancias con salida hoy. Seleccione una para ver desglose y confirmar.
+                </div>
+              </div>
+              <span class="badge text-bg-success" id="today-count">0</span>
+            </div>
+
+            <div id="today-list" class="list-group mt-3">
+              <div class="list-group-item text-muted">Cargando...</div>
+            </div>
+
+            <div class="d-grid mt-3">
+              <button id="btn-refresh-today" class="btn btn-outline-secondary" type="button">
+                <i class="bi bi-arrow-clockwise"></i> Refrescar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h5 class="card-title mb-2">Buscar por documento</h5>
+            <div class="text-muted small mb-3">
+              Cédula o Pasaporte. Si está vacío, se mantiene la lista de pendientes de hoy.
+            </div>
+
+            <div class="row g-2">
+              <div class="col-md-8">
+                <input id="doc" class="form-control" placeholder="Ej: 1-2345-6789 o pasaporte">
+              </div>
+              <div class="col-md-4 d-grid">
+                <button id="btn-search" class="btn btn-primary" type="button">Buscar</button>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-2">
+              <button id="btn-clear" class="btn btn-outline-secondary" type="button">Limpiar</button>
+            </div>
+
+            <hr>
+
+            <h6 class="mb-2">Resultado de búsqueda</h6>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>Reserva</th>
+                    <th>Huésped</th>
+                    <th>Habitación</th>
+                    <th>Salida</th>
+                    <th class="text-end">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="search-body">
+                  <tr><td colspan="5" class="text-muted">Ingrese un documento para filtrar (opcional).</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mt-4">
+      <div class="card-body">
+        <h5 class="card-title mb-2">Desglose / Confirmación</h5>
+        <p class="text-muted small mb-3">
+          Seleccione un pendiente (hoy o por búsqueda) para ver el total. Puede registrar un pago final opcional.
+        </p>
+
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label">Pago final (opcional)</label>
+            <input id="pago_final" type="number" step="0.01" class="form-control" value="0.00">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Método</label>
+            <select id="metodo" class="form-select">
+              <option value="Efectivo">Efectivo</option>
+              <option value="SINPE">SINPE</option>
+              <option value="Transferencia">Transferencia</option>
+            </select>
+          </div>
+          <div class="col-md-4 d-grid">
+            <button id="btn-confirm" class="btn btn-success" disabled type="button">
+              <i class="bi bi-check2-circle"></i> Confirmar check-out
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="text-muted small">Seleccionado:</div>
+            <div class="mono" id="sel">—</div>
+          </div>
+          <pre id="breakdown" class="mt-2 p-3 bg-light rounded" style="min-height:120px; white-space:pre-wrap;">Seleccione una estancia para ver el desglose...</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mt-4">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between gap-2">
+          <div>
+            <h5 class="card-title mb-1">Check-outs realizados esta semana</h5>
+            <div class="text-muted small">Se refresca automáticamente cada 20 segundos.</div>
+          </div>
+          <span class="badge text-bg-success" id="week-count">0</span>
+        </div>
+
+        <div class="table-responsive mt-3">
+          <table class="table table-sm table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>Reserva</th>
+                <th>Huésped</th>
+                <th>Habitación</th>
+                <th>Recepción</th>
+                <th class="text-end">Pago final</th>
+                <th>Método</th>
+              </tr>
+            </thead>
+            <tbody id="week-body">
+              <tr><td colspan="7" class="text-muted">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  let selected = { estancia_id: null, reserva_id: null };
+
+  function showUIAlert(type, msg) {
+    const box = $("ui-alert");
+    const span = $("ui-alert-msg");
+    span.textContent = msg || "";
+    box.classList.remove("d-none", "alert-success", "alert-danger", "alert-warning", "alert-info");
+    box.classList.add("alert-" + (type || "info"));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function hideUIAlert() {
+    const box = $("ui-alert");
+    box.classList.add("d-none");
+    $("ui-alert-msg").textContent = "";
+  }
+
+  async function fetchJSON(url, opts) {
+    const resp = await fetch(url, opts);
+    const ct = (resp.headers.get("content-type") || "").toLowerCase();
+    const raw = await resp.text();
+
+    if (!ct.includes("application/json")) {
+      throw new Error(`Respuesta no-JSON (HTTP ${resp.status}). Snippet: ${raw.slice(0,180)}`);
+    }
+
+    let data = null;
+    try { data = JSON.parse(raw); }
+    catch(e){ throw new Error(`JSON inválido (HTTP ${resp.status}). Snippet: ${raw.slice(0,180)}`); }
+
+    if (!resp.ok) throw new Error((data && (data.msg || data.message || data.error)) ? (data.msg || data.message || data.error) : `HTTP ${resp.status}`);
+    return data;
+  }
+
+  function setSelected(estancia_id, reserva_id) {
+    selected.estancia_id = estancia_id;
+    selected.reserva_id = reserva_id;
+    $("sel").textContent = (reserva_id ? `VG-${reserva_id}` : "—") + (estancia_id ? ` / Estancia ${estancia_id}` : "");
+    $("btn-confirm").disabled = !(reserva_id || estancia_id);
+  }
+
+  async function loadPreview(estancia_id, reserva_id) {
+    const q = new URLSearchParams();
+    if (estancia_id) q.set("estancia_id", estancia_id);
+    if (reserva_id) q.set("reserva_id", reserva_id);
+
+    const data = await fetchJSON(`/api/ops/checkout/preview?${q.toString()}`);
+    const b = data.breakdown || {};
+    $("breakdown").textContent =
+      `Reserva: ${b.reserva_id}\n` +
+      `Check-in: ${b.checkin}\n` +
+      `Check-out: ${b.checkout}\n` +
+      `Habitación ID: ${b.habitacion_id}\n\n` +
+      `Room total: ${b.room_total}\n` +
+      `Consumos: ${b.consumos}\n` +
+      `Impuestos: ${b.impuestos}\n` +
+      `Total: ${b.total}\n` +
+      `Pagado: ${b.pagado}\n` +
+      `Saldo: ${b.saldo}\n`;
+  }
+
+  function renderToday(items) {
+    $("today-count").textContent = items.length;
+    const box = $("today-list");
+    box.innerHTML = "";
+
+    if (!items.length) {
+      box.innerHTML = `<div class="list-group-item text-muted">No hay check-outs pendientes para hoy.</div>`;
+      return;
+    }
+
+    for (const it of items) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "list-group-item list-group-item-action";
+      btn.innerHTML = `
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="mono">VG-${it.reserva_id}</div>
+            <div class="small text-muted">${it.huesped || "—"} • Hab ${it.hab_num || "—"}</div>
+          </div>
+          <div class="small text-muted text-end">
+            Salida: ${it.checkout || "—"}
+          </div>
+        </div>
+      `;
+      btn.addEventListener("click", async () => {
+        hideUIAlert();
+        setSelected(it.estancia_id, it.reserva_id);
+        await loadPreview(it.estancia_id, it.reserva_id);
+        showUIAlert("info", `Seleccionado VG-${it.reserva_id} / Estancia ${it.estancia_id}.`);
+      });
+      box.appendChild(btn);
+    }
+  }
+
+  async function loadToday() {
+    try {
+      const data = await fetchJSON("/api/ops/checkout/today");
+      renderToday(data.items || []);
+    } catch (e) {
+      renderToday([]);
+      showUIAlert("danger", `Error cargando pendientes de hoy: ${String(e.message || e)}`);
+    }
+  }
+
+  function renderSearch(items) {
+    const tb = $("search-body");
+    tb.innerHTML = "";
+    if (!items.length) {
+      tb.innerHTML = `<tr><td colspan="5" class="text-muted">No hay resultados.</td></tr>`;
+      return;
+    }
+
+    for (const it of items) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="mono">VG-${it.reserva_id}</td>
+        <td>${it.huesped || "—"}</td>
+        <td>${it.hab_num || "—"}</td>
+        <td>${it.checkout || "—"}</td>
+        <td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button">Seleccionar</button></td>
+      `;
+      tr.querySelector("button").addEventListener("click", async () => {
+        hideUIAlert();
+        setSelected(it.estancia_id, it.reserva_id);
+        await loadPreview(it.estancia_id, it.reserva_id);
+        showUIAlert("info", `Seleccionado VG-${it.reserva_id} / Estancia ${it.estancia_id}.`);
+      });
+      tb.appendChild(tr);
+    }
+  }
+
+  async function doSearch() {
+    hideUIAlert();
+
+    const doc = ($("doc").value || "").trim();
+    if (!doc) {
+      $("search-body").innerHTML = `<tr><td colspan="5" class="text-muted">Sin documento: se mantiene la lista de pendientes para hoy.</td></tr>`;
+      await loadToday();
+      return;
+    }
+
+    try {
+      const data = await fetchJSON(`/api/ops/checkout/search?doc=${encodeURIComponent(doc)}`);
+      renderSearch(data.items || []);
+      if (!(data.items || []).length) {
+        showUIAlert("warning", "No se encontraron check-outs para hoy con ese documento.");
+      }
+    } catch (e) {
+      renderSearch([]);
+      showUIAlert("danger", `Error al buscar: ${String(e.message || e)}`);
+    }
+  }
+
+  async function loadWeek() {
+    const tb = $("week-body");
+    try {
+      const data = await fetchJSON("/api/ops/checkout/week");
+      const items = data.items || [];
+      $("week-count").textContent = items.length;
+
+      tb.innerHTML = "";
+      if (!items.length) {
+        tb.innerHTML = `<tr><td colspan="7" class="text-muted">No hay check-outs registrados esta semana.</td></tr>`;
+        return;
+      }
+
+      for (const it of items) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${it.fecha || "—"}</td>
+          <td class="mono">${it.reserva_id ? "VG-"+it.reserva_id : "—"}</td>
+          <td>${it.huesped || "—"}</td>
+          <td>${it.habitacion || "—"}</td>
+          <td>${it.recepcion || "—"}</td>
+          <td class="text-end">${(it.pago_final ?? 0).toFixed ? it.pago_final.toFixed(2) : it.pago_final}</td>
+          <td>${it.metodo || "—"}</td>
+        `;
+        tb.appendChild(tr);
+      }
+    } catch (e) {
+      tb.innerHTML = `<tr><td colspan="7" class="text-danger">Error cargando semana: ${String(e.message || e)}</td></tr>`;
+    }
+  }
+
+  async function doConfirm() {
+    hideUIAlert();
+
+    if (!selected.reserva_id && !selected.estancia_id) {
+      showUIAlert("warning", "Debe seleccionar una estancia.");
+      return;
+    }
+
+    const payload = {
+      reserva_id: selected.reserva_id,
+      estancia_id: selected.estancia_id,
+      pago_final: parseFloat($("pago_final").value || "0"),
+      metodo: $("metodo").value || "Efectivo"
+    };
+
+    try {
+      const data = await fetchJSON("/api/ops/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept":"application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      showUIAlert("success", `Check-out completado correctamente. Reserva VG-${data.reserva_id}.`);
+
+      setSelected(null, null);
+      $("breakdown").textContent = "Seleccione una estancia para ver el desglose...";
+      $("pago_final").value = "0.00";
+
+      await loadToday();
+      await loadWeek();
+
+    } catch (e) {
+      showUIAlert("danger", "Error al confirmar check-out: " + String(e.message || e));
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    $("btn-search").addEventListener("click", doSearch);
+    $("btn-clear").addEventListener("click", async () => {
+      hideUIAlert();
+      $("doc").value = "";
+      $("search-body").innerHTML = `<tr><td colspan="5" class="text-muted">Ingrese un documento para filtrar (opcional).</td></tr>`;
+      await loadToday();
+      showUIAlert("info", "Filtro limpiado. Mostrando pendientes de hoy.");
+    });
+
+    $("btn-confirm").addEventListener("click", doConfirm);
+    $("btn-refresh-today").addEventListener("click", async () => {
+      hideUIAlert();
+      await loadToday();
+      showUIAlert("info", "Pendientes de hoy actualizados.");
+    });
+
+    await loadToday();
+    await loadWeek();
+
+    setInterval(loadToday, 20000);
+    setInterval(loadWeek, 20000);
+  });
+</script>
+{% endblock %}

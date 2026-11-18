@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}Colaboradores | Hotel Villa Grace{% endblock %}
+{% block meta_description %}Gestión de colaboradores del hotel: altas, edición, bajas y acceso a registro de horas.{% endblock %}
+{% block meta_keywords %}RRHH, colaboradores, empleados, horas, Hotel Villa Grace{% endblock %}
+{% block body_class %}inner-page{% endblock %}
+
+{% block head_extra %}
+<link href="{{ url_for('static', filename='assets/css/style.css') }}" rel="stylesheet">
+<style>
+  .btn-theme{
+    background:#1c4b3c;
+    color:#fff;
+    border-color:#1c4b3c;
+  }
+  .btn-theme:hover{
+    filter:brightness(1.05);
+    color:#fff;
+  }
+  .btn-outline-theme{
+    color:#1c4b3c;
+    border-color:#1c4b3c;
+  }
+  .btn-outline-theme:hover{
+    background:#1c4b3c;
+    color:#fff;
+  }
+  .chip{
+    border:1px solid #cfd8dc;
+    border-radius:10rem;
+    padding:.25rem .6rem;
+    font-size:.85rem;
+    text-decoration:none;
+    color:inherit;
+  }
+  .chip.active{
+    background:#1c4b3c;
+    color:#fff;
+    border-color:#1c4b3c;
+  }
+  .badge-activo{
+    background:#d7f0e7;
+    color:#1c4b3c;
+    font-weight:600;
+    border-radius:.4rem;
+    padding:.25rem .5rem;
+  }
+  .badge-inactivo{
+    background:#f7d9d9;
+    color:#7a1111;
+    font-weight:600;
+    border-radius:.4rem;
+    padding:.25rem .5rem;
+  }
+  .table td,
+  .table th{
+    vertical-align:middle;
+  }
+  .confirm-icon-circle{
+    width:72px;
+    height:72px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    margin:0 auto 1rem;
+    background:#fdeeee;
+    color:#a11a1a;
+    font-size:1.7rem;
+  }
+  .confirm-copy{
+    color:#52606d;
+    line-height:1.6;
+  }
+  .confirm-copy strong{
+    color:#1c4b3c;
+  }
+  .modal-confirm-vg .modal-content{
+    border:0;
+    border-radius:1rem;
+    overflow:hidden;
+  }
+  .modal-confirm-vg .modal-header{
+    border-bottom:0;
+    padding-bottom:.25rem;
+  }
+  .modal-confirm-vg .modal-footer{
+    border-top:0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set showcase_bg = url_for('static', filename='assets/img/hotel/showcase-7.webp') %}
+
+<div class="page-title dark-background" style="background-image: url('{{ showcase_bg }}');">
+  <div class="container position-relative">
+    <h1>Colaboradores {{ estado|lower }}</h1>
+    <p>Gestione el equipo del hotel: nombre, puesto, salario base y estado laboral.</p>
+    <nav class="breadcrumbs">
+      <ol>
+        <li><a href="{{ url_for('index_html') }}">Inicio</a></li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container" data-aos="fade-up">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+      <div class="text-muted small">
+        <i class="bi bi-people"></i>
+        Total: <strong>{{ total }}</strong> ·
+        Activos: <strong>{{ conteos.get('Activo', 0) }}</strong> ·
+        Inactivos: <strong>{{ conteos.get('Inactivo', 0) }}</strong>
+      </div>
+
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-theme" data-bs-toggle="modal" data-bs-target="#modalNuevo">
+          <i class="bi bi-plus-lg"></i> Nuevo colaborador
+        </button>
+
+        <a href="{{ url_for('hrm.empleados_ui') }}?estado=Activo" class="chip {% if estado == 'Activo' %}active{% endif %}">Activos</a>
+        <a href="{{ url_for('hrm.empleados_ui') }}?estado=Inactivo" class="chip {% if estado == 'Inactivo' %}active{% endif %}">Inactivos</a>
+        <a href="{{ url_for('hrm.empleados_ui') }}?estado=todos" class="chip {% if estado == 'todos' %}active{% endif %}">Todos</a>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:80px">Código</th>
+              <th>Nombre</th>
+              <th>Puesto</th>
+              <th>Departamento</th>
+              <th class="text-end">Salario base</th>
+              <th>Estado</th>
+              <th style="width:230px" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if empleados|length == 0 %}
+              <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                  No hay colaboradores para este filtro.
+                </td>
+              </tr>
+            {% else %}
+              {% for e in empleados %}
+              <tr>
+                <td>{{ e.Codigo_Funcionario }}</td>
+                <td>
+                  <div class="fw-semibold">{{ e.Nombre }} {{ e.Apellido }}</div>
+                  <div class="small text-muted">Céd: {{ e.Cedula }}</div>
+                </td>
+                <td>{{ e.Puesto or '—' }}</td>
+                <td>{{ e.Departamento or '—' }}</td>
+                <td class="text-end">₡{{ e.Salario_Base_Mensual }}</td>
+                <td>
+                  {% if e.Estado_Empleado == 'Activo' %}
+                    <span class="badge-activo">Activo</span>
+                  {% else %}
+                    <span class="badge-inactivo">Inactivo</span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-theme"
+                    data-id="{{ e.Codigo_Funcionario }}"
+                    data-puesto="{{ e.Puesto or '' }}"
+                    data-depto="{{ e.Departamento or '' }}"
+                    data-salario="{{ e.Salario_Base_Mensual or '' }}"
+                    data-nombre="{{ (e.Nombre or '') ~ ' ' ~ (e.Apellido or '') }}"
+                    onclick="openEditFromButton(this)">
+                    Editar
+                  </button>
+
+                  <a class="btn btn-sm btn-theme" href="/hrm/mis-horas?func={{ e.Codigo_Funcionario }}">Horas</a>
+
+                  {% if e.Estado_Empleado == 'Activo' %}
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-id="{{ e.Codigo_Funcionario }}"
+                    data-nombre="{{ (e.Nombre or '') ~ ' ' ~ (e.Apellido or '') }}"
+                    onclick="desactivarEmpleadoDesdeBoton(this)">
+                    Baja
+                  </button>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="modal fade" id="modalNuevo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-person-plus"></i> Nuevo colaborador</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formNuevo" class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Cédula *</label>
+            <input name="Cedula" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Nombre *</label>
+            <input name="Nombre" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Apellido *</label>
+            <input name="Apellido" class="form-control" required>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Puesto</label>
+            <input name="Puesto" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Departamento</label>
+            <input name="Departamento" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Tipo de contrato</label>
+            <select name="Tipo_Contrato" class="form-select">
+              <option>Tiempo completo</option>
+              <option>Medio tiempo</option>
+              <option>Temporal</option>
+              <option>Práctica</option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Fecha de nacimiento</label>
+            <input type="date" name="Fecha_Nacimiento" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Fecha de ingreso</label>
+            <input type="date" name="Fecha_Ingreso" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Salario base (₡)</label>
+            <input name="Salario_Base_Mensual" class="form-control" placeholder="0.00" inputmode="decimal">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Banco</label>
+            <input name="Banco" class="form-control">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Cuenta bancaria</label>
+            <input name="Cuenta_Bancaria" class="form-control">
+          </div>
+
+          <input type="hidden" name="Estado_Empleado" value="Activo">
+        </form>
+        <div class="small text-muted mt-2">Los campos marcados con * son obligatorios.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-theme" onclick="guardarNuevo()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEdit" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar datos</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEdit" class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Colaborador</label>
+            <input class="form-control" id="editNombre" disabled>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Puesto</label>
+            <input class="form-control" name="Puesto" id="editPuesto">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Departamento</label>
+            <input class="form-control" name="Departamento" id="editDepto">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Salario base (₡)</label>
+            <input class="form-control" name="Salario_Base_Mensual" id="editSalario" inputmode="decimal">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-theme" onclick="guardarEdit()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade modal-confirm-vg" id="modalConfirmInactivate" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header">
+        <h5 class="modal-title">Cambiar estado del colaborador</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body text-center px-4 pt-2 pb-1">
+        <div class="confirm-icon-circle">
+          <i class="bi bi-person-dash"></i>
+        </div>
+        <h5 class="mb-2">¿Deseas marcar este colaborador como inactivo?</h5>
+        <p class="confirm-copy mb-0">
+          El colaborador <strong id="confirmInactivateName">—</strong> dejará de aparecer como activo en el módulo de RR. HH.
+          Esta acción quedará registrada en el historial del sistema.
+        </p>
+      </div>
+      <div class="modal-footer justify-content-center gap-2 px-4 pb-4">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-theme" id="btnConfirmInactivate" onclick="confirmarDesactivarEmpleado()">
+          Sí, marcar como inactivo
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openEditFromButton(btn){
+    openEdit(
+      btn.dataset.id || '',
+      btn.dataset.puesto || '',
+      btn.dataset.depto || '',
+      btn.dataset.salario || '',
+      btn.dataset.nombre || ''
+    );
+  }
+
+  function desactivarEmpleadoDesdeBoton(btn){
+    desactivarEmpleado(
+      btn.dataset.id || '',
+      btn.dataset.nombre || 'este colaborador'
+    );
+  }
+
+  async function guardarNuevo(){
+    const form = document.getElementById('formNuevo');
+    if(!form.reportValidity()) return;
+
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.Registrado_Por = 1;
+
+    try{
+      const r = await fetch('/hrm/empleados', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await r.json();
+
+      if(r.ok && json.ok){
+        bootstrap.Modal.getInstance(document.getElementById('modalNuevo')).hide();
+        location.reload();
+      }else{
+        alert('No se pudo guardar: ' + (json.error || 'Error'));
+      }
+    }catch(e){
+      console.error(e);
+      alert('Error de red');
+    }
+  }
+
+  let empleadoPendienteInactivar = null;
+  let modalConfirmInactivate = null;
+
+  function desactivarEmpleado(id, nombre){
+    empleadoPendienteInactivar = id;
+    document.getElementById('confirmInactivateName').textContent = nombre || 'este colaborador';
+
+    if(!modalConfirmInactivate){
+      modalConfirmInactivate = new bootstrap.Modal(document.getElementById('modalConfirmInactivate'));
+    }
+    modalConfirmInactivate.show();
+  }
+
+  async function confirmarDesactivarEmpleado(){
+    if(!empleadoPendienteInactivar) return;
+
+    const btn = document.getElementById('btnConfirmInactivate');
+    const htmlOriginal = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+
+    try{
+      const r = await fetch(`/hrm/empleados/${empleadoPendienteInactivar}`, {
+        method: 'DELETE',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({Registrado_Por:1})
+      });
+
+      const json = await r.json();
+
+      if(r.ok && json.ok){
+        location.reload();
+        return;
+      }
+
+      alert('No se pudo actualizar: ' + (json.error || 'Error'));
+    }catch(e){
+      console.error(e);
+      alert('Error de red');
+    }finally{
+      btn.disabled = false;
+      btn.innerHTML = htmlOriginal;
+      if(modalConfirmInactivate){
+        modalConfirmInactivate.hide();
+      }
+      empleadoPendienteInactivar = null;
+    }
+  }
+
+  let editId = null;
+
+  function openEdit(id, puesto, depto, salario, nombre){
+    editId = id;
+    document.getElementById('editNombre').value = nombre || '';
+    document.getElementById('editPuesto').value = puesto || '';
+    document.getElementById('editDepto').value = depto || '';
+    document.getElementById('editSalario').value = salario || '';
+    new bootstrap.Modal(document.getElementById('modalEdit')).show();
+  }
+
+  async function guardarEdit(){
+    const form = document.getElementById('formEdit');
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.Registrado_Por = 1;
+
+    try{
+      const r = await fetch(`/hrm/empleados/${editId}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await r.json();
+
+      if(r.ok && json.ok){
+        bootstrap.Modal.getInstance(document.getElementById('modalEdit')).hide();
+        location.reload();
+      }else{
+        alert('No se pudo actualizar: ' + (json.error || 'Error'));
+      }
+    }catch(e){
+      console.error(e);
+      alert('Error de red');
+    }
+  }
+</script>
+{% endblock %}

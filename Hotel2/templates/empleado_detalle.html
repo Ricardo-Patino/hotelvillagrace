@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis horas | Hotel Villa Grace</title>
+
+  <link href="{{ url_for('static', filename='assets/img/favicon.png') }}" rel="icon">
+  <link href="https://fonts.googleapis.com" rel="preconnect"><link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/vendor/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/css/main.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='assets/css/style.css') }}" rel="stylesheet">
+  <style>
+    body{background:#f9fafb}
+    .section-title{font-family:"Playfair Display",serif;font-weight:600;color:#1c4b3c}
+    .btn-theme{background:#1c4b3c;color:#fff;border-color:#1c4b3c}
+    .btn-theme:hover{filter:brightness(1.05)}
+    .btn-outline-theme{color:#1c4b3c;border-color:#1c4b3c}
+    .btn-outline-theme:hover{background:#1c4b3c;color:#fff}
+    .badge-pill{border:1px solid #cfd8dc;border-radius:10rem;padding:.25rem .6rem;font-size:.85rem}
+    .table td, .table th{vertical-align:middle}
+    .avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb}
+  </style>
+</head>
+<body>
+
+<header id="header" class="header d-flex align-items-center fixed-top">
+  <div class="container position-relative d-flex align-items-center justify-content-between">
+    <a href="/" class="logo d-flex align-items-center me-auto me-xl-0"><h1 class="sitename">Hotel Villa Grace</h1></a>
+    <nav id="navmenu" class="navmenu">
+      <ul>
+        <li><a href="/">Inicio</a></li>
+        <li><a href="/hrm/empleados-ui" class="active">Colaboradores</a></li>
+      </ul>
+      <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+    </nav>
+  </div>
+</header>
+
+<main class="main mt-5 pt-4">
+  <section class="section">
+    <div class="container" data-aos="fade-up">
+
+      <div class="text-center mb-4">
+        <h2 class="section-title">Mis horas</h2>
+        <p class="text-muted mb-0">
+          Panel personal de marcación de {{ empleado.Nombre }} {{ empleado.Apellido }}
+        </p>
+      </div>
+
+      <!-- Cabecera usuario + controles -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <img class="avatar" src="{{ url_for('static', filename='assets/img/team/default-avatar.webp') }}" alt="avatar">
+            <div>
+              <div class="fw-semibold">{{ empleado.Nombre }} {{ empleado.Apellido }}</div>
+              <div class="text-muted small">{{ empleado.Puesto or '—' }} · {{ empleado.Departamento or '—' }}</div>
+              <div class="badge-pill mt-1">Total mes: <strong>{{ '%.2f'|format(total_horas) }}</strong> h</div>
+            </div>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2">
+            <button id="btnEntrada" class="btn btn-theme"><i class="bi bi-box-arrow-in-right"></i> Fichar entrada</button>
+            <button id="btnSalida" class="btn btn-outline-theme"><i class="bi bi-box-arrow-left"></i> Fichar salida</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros mes -->
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="text-muted">
+          <i class="bi bi-calendar3"></i>
+          <strong>{{ '%02d'|format(month) }}/{{ year }}</strong>
+        </div>
+        <div class="d-flex gap-2">
+          {# Enlace al mes anterior #}
+          {% set prev_y = (month == 1 and year - 1 or year) %}
+          {% set prev_m = (month == 1 and 12 or month - 1) %}
+          {# Enlace al mes siguiente #}
+          {% set next_y = (month == 12 and year + 1 or year) %}
+          {% set next_m = (month == 12 and 1 or month + 1) %}
+
+          <a class="btn btn-sm btn-outline-secondary" id="btnPrevMes" href="#">Mes anterior</a>
+          <a class="btn btn-sm btn-outline-secondary" id="btnNextMes" href="#">Mes siguiente</a>
+        </div>
+      </div>
+
+      <!-- Tabla de marcaciones -->
+      <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th class="text-end">Horas</th>
+                <th>Estado</th>
+                <th>Observación</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyMarcas">
+              {% if marcas|length == 0 %}
+              <tr><td colspan="6" class="text-center text-muted py-4">Sin registros para este mes.</td></tr>
+              {% else %}
+              {% for m in marcas %}
+              <tr>
+                <td>{{ m.Fecha.strftime('%d/%m/%Y') if m.Fecha else '—' }}</td>
+                <td>
+                  {% if m.Hora_Entrada %}{{ m.Hora_Entrada.strftime('%H:%M') }}
+                  {% elif m.Entrada %}{{ m.Entrada.strftime('%H:%M') }}
+                  {% else %}—{% endif %}
+                </td>
+                <td>
+                  {% if m.Hora_Salida %}{{ m.Hora_Salida.strftime('%H:%M') }}
+                  {% elif m.Salida %}{{ m.Salida.strftime('%H:%M') }}
+                  {% else %}—{% endif %}
+                </td>
+                <td class="text-end">
+                  {% if m.Horas is not none %}{{ '%.2f'|format(m.Horas) }}
+                  {% elif m.Total_Horas is not none %}{{ '%.2f'|format(m.Total_Horas) }}
+                  {% else %}—{% endif %}
+                </td>
+                <td>{{ m.Estado or '—' }}</td>
+                <td class="text-truncate" style="max-width:240px">{{ m.Observacion or '—' }}</td>
+              </tr>
+              {% endfor %}
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="text-end mt-3">
+        <a href="/hrm/empleados-ui" class="btn btn-outline-theme"><i class="bi bi-arrow-left"></i> Volver</a>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer id="footer" class="footer position-relative dark-background mt-4">
+  <div class="copyright text-center"><div class="container">© <strong><span>Hotel Villa Grace</span></strong></div></div>
+</footer>
+
+<script src="{{ url_for('static', filename='assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script>
+  // --- Helpers para preservar ?func=ID en llamadas y navegación ---
+  const url = new URL(window.location.href);
+  const func = url.searchParams.get('func');
+  const baseParams = func ? `?func=${encodeURIComponent(func)}` : '';
+
+  // Navegación de meses (mantiene ?func=)
+  document.getElementById('btnPrevMes').addEventListener('click', (e)=>{
+    e.preventDefault();
+    const y = {{ year }};
+    const m = {{ month }};
+    const prevY = (m === 1) ? y - 1 : y;
+    const prevM = (m === 1) ? 12 : (m - 1);
+    window.location.href = `/hrm/mis-horas${baseParams}${baseParams ? '&' : '?'}y=${prevY}&m=${prevM}`;
+  });
+
+  document.getElementById('btnNextMes').addEventListener('click', (e)=>{
+    e.preventDefault();
+    const y = {{ year }};
+    const m = {{ month }};
+    const nextY = (m === 12) ? y + 1 : y;
+    const nextM = (m === 12) ? 1 : (m + 1);
+    window.location.href = `/hrm/mis-horas${baseParams}${baseParams ? '&' : '?'}y=${nextY}&m=${nextM}`;
+  });
+
+  // --- Acciones de fichaje ---
+  const btnEntrada = document.getElementById('btnEntrada');
+  const btnSalida  = document.getElementById('btnSalida');
+
+  async function postJson(path){
+    const resp = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'} });
+    let json = {};
+    try{ json = await resp.json(); } catch(_){}
+    return { ok: resp.ok && json.ok, json };
+  }
+
+  btnEntrada.addEventListener('click', async ()=>{
+    btnEntrada.disabled = true;
+    btnEntrada.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Marcando...';
+    const { ok, json } = await postJson(`/hrm/marcar/entrada${baseParams}`);
+    if(ok){
+      // recargar para ver la fila creada
+      window.location.reload();
+    }else{
+      alert(json.error || 'No se pudo marcar entrada');
+      btnEntrada.disabled = false;
+      btnEntrada.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Fichar entrada';
+    }
+  });
+
+  btnSalida.addEventListener('click', async ()=>{
+    btnSalida.disabled = true;
+    btnSalida.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Marcando...';
+    const { ok, json } = await postJson(`/hrm/marcar/salida${baseParams}`);
+    if(ok){
+      // recargar para ver horas calculadas
+      window.location.reload();
+    }else{
+      alert(json.error || 'No se pudo marcar salida');
+      btnSalida.disabled = false;
+      btnSalida.innerHTML = '<i class="bi bi-box-arrow-left"></i> Fichar salida';
+    }
+  });
+</script>
+</body>
+</html>
+
+
+
+
+

@@ -1,0 +1,575 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de reserva — Hotel Villa Grace{% endblock %}
+{% block meta_description %}Detalle de reserva del cliente en Hotel Villa Grace.{% endblock %}
+
+{% block body_class %}privacy-page{% endblock %}
+
+{% block head_extra %}
+<style>
+  :root{
+    --vg-primary:#145a40;
+    --vg-primary-2:#0e3f2c;
+  }
+
+  body{ background:#f7f8f9; }
+
+  .page-title{
+    font-weight:700;
+    color:#17212b;
+    margin-bottom:.25rem;
+  }
+
+  .info-card{
+    border:0;
+    border-radius:16px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.08);
+  }
+
+  .label{ font-size:.85rem; color:#6b7a89; }
+  .value{ font-weight:600; }
+  .badge-status{ font-weight:600; letter-spacing:.2px; }
+  .badge-status.Confirmada{ background:#d1f7e3; color:#096d46; }
+  .badge-status.Pendiente{ background:#fff4d6; color:#8a5b00; }
+  .badge-status.Cancelada{ background:#ffe0e0; color:#9c1e1e; }
+
+  .btn-vg{
+    background:var(--vg-primary);
+    border-color:var(--vg-primary);
+    color:#fff;
+  }
+  .btn-vg:hover{
+    background:var(--vg-primary-2);
+    border-color:var(--vg-primary-2);
+    color:#fff;
+  }
+
+  .spinner-wrap{ display:none; }
+  .money{ font-weight:700; color:var(--vg-primary); }
+  .section-title{ font-size:1.05rem; font-weight:700; color:#17212b; }
+  .form-hint{ font-size:.875rem; color:#6b7a89; }
+  .muted{ color:#6b7a89; font-size:.9rem; }
+  .table-sm td, .table-sm th{ padding:.35rem .5rem; }
+  .d-none{ display:none!important; }
+  .d-block{ display:block!important; }
+
+  .page-title.dark-background p {
+  font-weight: 400 !important;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  letter-spacing: 0;
+  opacity: 0.95;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-title dark-background" data-aos="fade"
+  style="background-image: url('{{ url_for('static', filename='assets/img/hotel/showcase-7.webp') }}');">
+  <div class="container position-relative">
+    <h1 id="title">Detalle de la reserva</h1>
+    <p>Extiende la estadía, cambia huéspedes y paga solo el monto adicional.</p>
+
+    <nav class="breadcrumbs" aria-label="breadcrumbs">
+      <ol>
+        <li><a href="{{ url_for('index_html') }}">Inicio</a></li>
+        <li><a href="{{ url_for('portal_reservas_html') }}">Mis reservas</a></li>
+        <li class="current">Detalle</li>
+      </ol>
+    </nav>
+
+    <div class="d-flex gap-2 flex-wrap mt-3">
+      <a class="btn btn-outline-vg" href="{{ url_for('portal_reservas_html') }}">
+        <i class="bi bi-arrow-left me-1"></i>Volver a Mis reservas
+      </a>
+
+      <a id="btnComprobante" class="btn btn-outline-success" href="#" target="_blank" rel="noopener">
+        <i class="bi bi-receipt me-1"></i>Comprobante (PDF)
+      </a>
+    </div>
+  </div>
+</div>
+
+<main class="container py-4 py-md-5">
+  <div id="alerts"></div>
+
+  <div id="spinner" class="spinner-wrap text-center my-4">
+    <div class="spinner-border text-success" role="status"></div>
+    <div class="small text-muted mt-2">Cargando…</div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Resumen -->
+    <div class="col-12 col-lg-6">
+      <div class="card info-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="section-title">Resumen actual</div>
+            <span id="badgeEstado" class="badge badge-status">—</span>
+          </div>
+
+          <div class="row g-3 mt-2">
+            <div class="col-6">
+              <div class="label">Número</div>
+              <div class="value" id="valNumero">—</div>
+            </div>
+            <div class="col-6 text-end">
+              <div class="label">Total</div>
+              <div class="value money" id="valTotal">—</div>
+            </div>
+
+            <div class="col-6">
+              <div class="label">Check-in</div>
+              <div class="value" id="valCI">—</div>
+            </div>
+            <div class="col-6">
+              <div class="label">Check-out</div>
+              <div class="value" id="valCO">—</div>
+            </div>
+
+            <div class="col-6">
+              <div class="label">Huéspedes</div>
+              <div class="value" id="valPax">—</div>
+            </div>
+            <div class="col-6">
+              <div class="label">Canal</div>
+              <div class="value" id="valCanal">—</div>
+            </div>
+
+            <div class="col-12">
+              <div class="label">Tipo habitación</div>
+              <div class="value" id="valTipo">—</div>
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <div>
+            <div class="section-title mb-2">Exportar</div>
+            <div class="d-flex flex-wrap gap-2">
+              <a id="btnExportPdf" class="btn btn-outline-primary" href="#" target="_blank">PDF</a>
+            </div>
+            <div class="form-hint mt-2">El PDF usa el comprobante oficial.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Edición + Cotización/Pago -->
+    <div class="col-12 col-lg-6">
+      <div class="card info-card">
+        <div class="card-body">
+          <div class="section-title">Editar</div>
+
+          <form id="editForm" class="row gy-3 mt-1">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Check-in</label>
+              <input type="date" id="inCheckin" class="form-control">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Check-out</label>
+              <input type="date" id="inCheckout" class="form-control">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Huéspedes</label>
+              <input type="number" min="1" id="inPax" class="form-control" placeholder="1">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Observaciones</label>
+              <textarea id="inObs" class="form-control" rows="3" placeholder="Notas u observaciones"></textarea>
+            </div>
+
+            <div class="col-12">
+              <button class="btn btn-vg" type="submit" id="btnQuote">Cotizar cambios</button>
+              <a class="btn btn-outline-secondary ms-2" href="{{ url_for('portal_reservas_html') }}">Volver</a>
+            </div>
+            <div class="form-hint mt-2">La disponibilidad se valida sobre <strong>la misma habitación asignada</strong>.</div>
+          </form>
+
+          <hr class="my-4">
+
+          <div id="quoteWrap" class="d-none">
+            <div class="section-title mb-2">Resumen del cambio</div>
+            <table class="table table-sm">
+              <tbody id="quoteTotals"></tbody>
+            </table>
+            <div id="quoteMsg" class="muted"></div>
+          </div>
+
+          <div id="sinpeWrap" class="d-none mt-3">
+            <div class="section-title mb-2">Confirmación por SINPE</div>
+          
+            <div class="alert alert-success border-0" style="background:#edf8f1;color:#145a40;border-radius:14px;">
+              <div class="fw-semibold mb-2">
+                <i class="bi bi-phone me-1"></i>
+                Datos para el pago SINPE
+              </div>
+          
+              <div class="row g-2">
+                <div class="col-12 col-md-6">
+                  <div class="label">Beneficiario</div>
+                  <div class="value">{{ sinpe_beneficiary or 'Hotel Villa Grace' }}</div>
+                </div>
+          
+                <div class="col-12 col-md-6">
+                  <div class="label">Número SINPE</div>
+                  <div class="value d-flex align-items-center gap-2">
+                    <span id="sinpeNumberChange">{{ sinpe_mobile or 'No configurado' }}</span>
+                    <button id="btnCopySinpeChange" class="btn btn-sm btn-outline-success" type="button">
+                      Copiar
+                    </button>
+                  </div>
+                </div>
+          
+                <div class="col-12">
+                  <div class="label">Monto adicional</div>
+                  <div class="value money" id="sinpeAmountChange">—</div>
+                </div>
+              </div>
+          
+              <div class="form-hint mt-3">
+                Si hay monto adicional, realiza el SINPE antes de confirmar. Al confirmar, la solicitud quedará pendiente de aprobación por el hotel.
+              </div>
+            </div>
+          
+            <button id="btnConfirmChanges" class="btn btn-vg" type="button">
+              <i class="bi bi-check2-circle me-1"></i>Confirmar cambios
+            </button>
+          
+            <span id="sinpeHint" class="muted ms-2">No se aplicarán cambios hasta que el hotel los apruebe.</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function(){
+    const q = new URLSearchParams(location.search);
+    const reservaId = q.get('id');
+
+    const alerts = document.getElementById('alerts');
+    const spinner = document.getElementById('spinner');
+
+    const badgeEstado = document.getElementById('badgeEstado');
+    const valNumero = document.getElementById('valNumero');
+    const valTotal = document.getElementById('valTotal');
+    const valCI = document.getElementById('valCI');
+    const valCO = document.getElementById('valCO');
+    const valPax = document.getElementById('valPax');
+    const valCanal = document.getElementById('valCanal');
+    const valTipo = document.getElementById('valTipo');
+
+    const inCI = document.getElementById('inCheckin');
+    const inCO = document.getElementById('inCheckout');
+    const inPax = document.getElementById('inPax');
+    const inObs = document.getElementById('inObs');
+
+    const btnComprobante = document.getElementById('btnComprobante');
+    const btnExportPdf = document.getElementById('btnExportPdf');
+
+    const quoteWrap = document.getElementById('quoteWrap');
+    const quoteTotals = document.getElementById('quoteTotals');
+    const quoteMsg = document.getElementById('quoteMsg');
+
+    const sinpeWrap = document.getElementById('sinpeWrap');
+    const sinpeAmountChange = document.getElementById('sinpeAmountChange');
+    const btnConfirmChanges = document.getElementById('btnConfirmChanges');
+    const btnCopySinpeChange = document.getElementById('btnCopySinpeChange');
+    const sinpeNumberChange = document.getElementById('sinpeNumberChange');
+
+    const SINPE_NUMBER = "{{ sinpe_mobile|default('', true) }}";
+
+    let currentReserva = null;
+    let lastQuote = null;
+
+    function alertMsg(type, msg){
+      const el = document.createElement('div');
+      el.className = `alert alert-${type}`;
+      el.textContent = msg;
+      alerts.innerHTML = '';
+      alerts.appendChild(el);
+      setTimeout(()=>{ el.remove(); }, 7000);
+    }
+
+    function fmtDate(s){
+      return s ? String(s).slice(0,10) : '';
+    }
+
+    function fmtMoney(n){
+      const v = Number(n || 0);
+      return '₡ ' + v.toLocaleString('es-CR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function setEstadoBadge(estado){
+      badgeEstado.textContent = estado || '—';
+      badgeEstado.className = `badge badge-status ${estado || ''}`;
+    }
+
+    function paxInt(){
+      const p = parseInt((inPax.value || '').toString().replace(/\D/g,''), 10);
+      return isNaN(p) ? null : p;
+    }
+
+    function canRequestByDate(r){
+      const estado = String(r.estado || '').trim().toLowerCase();
+      if (['cancelada', 'noshow'].includes(estado)) return false;
+
+      const ci = fmtDate(r.checkin);
+      if (!ci) return false;
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      const checkinDate = new Date(ci + 'T00:00:00');
+      if (Number.isNaN(checkinDate.getTime())) return false;
+
+      return checkinDate >= today;
+    }
+
+    function disableEdit(reason){
+      document.querySelectorAll('#editForm input, #editForm textarea, #editForm button').forEach(el => {
+        el.disabled = true;
+      });
+
+      quoteWrap.classList.add('d-none');
+      sinpeWrap.classList.add('d-none');
+
+      alertMsg('warning', reason || 'Esta reserva ya no permite solicitudes de cambio.');
+    }
+
+    if(!reservaId){
+      alertMsg('warning', 'Falta el parámetro ?id en la URL.');
+      return;
+    }
+
+    async function load(){
+      try{
+        spinner.style.display = 'block';
+
+        const res = await fetch(`/api/portal/reservas/${encodeURIComponent(reservaId)}`, {
+          credentials:'same-origin'
+        });
+
+        const data = await res.json();
+
+        if(!data.ok){
+          throw new Error(data.message || 'No se encontró la reserva.');
+        }
+
+        const r = data.item || {};
+        currentReserva = r;
+
+        document.getElementById('title').textContent = `Reserva ${r.numero || ('VG-' + r.id)}`;
+        setEstadoBadge(r.estado);
+
+        valNumero.textContent = r.numero || ('VG-' + r.id);
+        valTotal.textContent = fmtMoney(r.monto || 0);
+        valCI.textContent = fmtDate(r.checkin);
+        valCO.textContent = fmtDate(r.checkout);
+        valPax.textContent = r.huespedes || '—';
+        valCanal.textContent = r.canal || '—';
+        valTipo.textContent = r.tipo || '—';
+
+        inCI.value = fmtDate(r.checkin);
+        inCO.value = fmtDate(r.checkout);
+        inPax.value = (r.huespedes || 1);
+        inObs.value = r.observaciones || '';
+
+        btnComprobante.href = `/api/reservas/${encodeURIComponent(r.id)}/comprobante`;
+        btnExportPdf.href = `/api/portal/reservas/${encodeURIComponent(r.id)}/export?format=pdf`;
+
+        if (!canRequestByDate(r)) {
+          disableEdit('Ya no se pueden solicitar cambios porque la fecha de ingreso ya pasó o la reserva no está disponible para cambios.');
+        }
+
+      }catch(err){
+        console.error(err);
+        alertMsg('danger', err.message || 'Error al cargar la reserva.');
+      }finally{
+        spinner.style.display = 'none';
+      }
+    }
+
+    function renderQuote(qd){
+      const nights      = qd.nights      ?? qd.pricing?.nights_new ?? qd.pricing?.nights ?? null;
+      const priceNight  = qd.price_night ?? qd.pricing?.price_night ?? null;
+      const totalOld    = qd.current_total ?? qd.pricing?.total_old ?? null;
+      const totalNew    = qd.new_total     ?? qd.pricing?.total_new ?? null;
+      const delta       = qd.delta         ?? qd.pricing?.delta     ?? 0;
+
+      const rows = [
+        ['Noches', nights ?? '—'],
+        ['Precio por noche', fmtMoney(priceNight || 0)],
+        ['Total actual', fmtMoney(totalOld || 0)],
+        ['Total nuevo', fmtMoney(totalNew || 0)],
+        ['Adicional a pagar', `<span class="money">${fmtMoney(delta || 0)}</span>`],
+      ];
+
+      quoteTotals.innerHTML = rows
+        .map(([k,v]) => `<tr><th>${k}</th><td class="text-end">${v}</td></tr>`)
+        .join('');
+
+      quoteMsg.textContent = qd.message || 'Disponible. Puedes continuar con la solicitud de cambios.';
+
+      quoteWrap.classList.remove('d-none');
+      quoteWrap.classList.add('d-block');
+
+      sinpeAmountChange.textContent = fmtMoney(delta || 0);
+      sinpeWrap.classList.remove('d-none');
+      sinpeWrap.classList.add('d-block');
+    }
+
+    async function quoteChanges(){
+      const payload = {
+        checkin: inCI.value || null,
+        checkout: inCO.value || null,
+        huespedes: paxInt()
+      };
+
+      const res = await fetch(`/api/portal/reservas/${encodeURIComponent(reservaId)}/quote-changes`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials:'same-origin',
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if(!res.ok || !data.ok){
+        throw new Error(data.message || 'No se pudo validar la cotización.');
+      }
+
+      if(data.available === false){
+        throw new Error(data.message || 'Sin disponibilidad.');
+      }
+
+      lastQuote = data;
+      renderQuote(data);
+      return data;
+    }
+
+    async function applyChanges(){
+      if (!currentReserva) {
+        throw new Error('No se pudo cargar la información actual de la reserva.');
+      }
+
+      if (!lastQuote) {
+        await quoteChanges();
+      }
+
+      const delta = Number(lastQuote?.delta || 0);
+
+      if (delta > 0 && !SINPE_NUMBER) {
+        throw new Error('SINPE no configurado. Contacta al hotel para completar la solicitud.');
+      }
+
+      const payload = {
+        old: {
+          checkin: fmtDate(currentReserva.checkin),
+          checkout: fmtDate(currentReserva.checkout),
+          guests: parseInt(currentReserva.huespedes || 1, 10),
+          huespedes: parseInt(currentReserva.huespedes || 1, 10),
+          total: Number(currentReserva.monto || 0)
+        },
+        new: {
+          checkin: inCI.value || null,
+          checkout: inCO.value || null,
+          guests: paxInt(),
+          huespedes: paxInt(),
+          observaciones: inObs.value || null
+        },
+        quote: lastQuote,
+        payment: {
+          method: 'SINPE',
+          declared: true,
+          amount: delta
+        }
+      };
+
+      const res = await fetch(`/api/portal/reservas/${encodeURIComponent(reservaId)}/apply-changes`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        credentials:'same-origin',
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if(!res.ok || !data.ok){
+        throw new Error(data.message || 'No se pudo enviar la solicitud de cambios.');
+      }
+
+      return data;
+    }
+
+    document.getElementById('editForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+
+      try{
+        await quoteChanges();
+        alertMsg('info', 'Revisa el resumen, realiza el SINPE si hay monto adicional y luego confirma los cambios.');
+      }catch(err){
+        alertMsg('danger', err.message || 'Error en la cotización.');
+      }
+    });
+
+    btnConfirmChanges.addEventListener('click', async ()=>{
+      try{
+        btnConfirmChanges.disabled = true;
+        btnConfirmChanges.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando solicitud...';
+
+        const res = await applyChanges();
+
+        alertMsg('success', res.message || 'Solicitud enviada. Quedó pendiente de aprobación.');
+
+        btnConfirmChanges.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Solicitud enviada';
+        lastQuote = null;
+
+      }catch(err){
+        btnConfirmChanges.disabled = false;
+        btnConfirmChanges.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Confirmar cambios';
+        alertMsg('danger', err.message || 'Error al confirmar cambios.');
+      }
+    });
+
+    btnCopySinpeChange?.addEventListener('click', async ()=>{
+      try{
+        const number = (sinpeNumberChange?.textContent || '').trim();
+        if (!number || number === 'No configurado') {
+          alertMsg('warning', 'No hay número SINPE configurado.');
+          return;
+        }
+
+        await navigator.clipboard.writeText(number);
+        alertMsg('success', 'Número SINPE copiado.');
+      }catch(_){
+        alertMsg('warning', 'No se pudo copiar automáticamente. Copia el número manualmente.');
+      }
+    });
+
+    [inCI, inCO, inPax].forEach(el=>{
+      el.addEventListener('change', ()=>{
+        lastQuote = null;
+        quoteWrap.classList.add('d-none');
+        quoteWrap.classList.remove('d-block');
+        sinpeWrap.classList.add('d-none');
+        sinpeWrap.classList.remove('d-block');
+      });
+    });
+
+    load();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Hotel Villa Grace | Sobre nosotros{% endblock %}
+{% block meta_description %}Hotel Villa Grace en Cóbano, Puntarenas. Piscina para adultos y niños, restaurante y bar, Wi-Fi y parqueo gratis. A 7 km de Montezuma y 14 km de Santa Teresa. Tel: +506 2642 0225{% endblock %}
+{% block meta_keywords %}Hotel Villa Grace, Cóbano, Puntarenas, Montezuma, Santa Teresa, hotel con piscina, restaurante, hospedaje Costa Rica{% endblock %}
+
+{% block body_class %}about-page{% endblock %}
+{% block nav_about %}active{% endblock %}
+
+{% block content %}
+
+  <div class="page-title dark-background" data-aos="fade"
+    style="background-image: url({{ url_for('static', filename='assets/img/hotel/showcase-7.webp') }});">
+    <div class="container position-relative">
+      <h1>Sobre nosotros</h1>
+      <p>Un hotel familiar y acogedor en Cóbano, Puntarenas. La base perfecta para descubrir Montezuma, Santa Teresa y la belleza natural de la Península de Nicoya.</p>
+
+      {# Si quieres usar tu breadcrumb visual del template (en vez del del base), al menos corrige url_for #}
+      <nav class="breadcrumbs" aria-label="breadcrumbs">
+        <ol>
+          <li><a href="{{ url_for('index_html') }}">Inicio</a></li>
+          <li class="current">Sobre nosotros</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <section id="about" class="about section">
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+      <div class="row gy-4">
+        <div class="col-lg-6">
+          <div class="about-content">
+            <h3>Hospitalidad con esencia local</h3>
+            <p>
+              En <strong>Hotel Villa Grace</strong> combinamos comodidad, limpieza y trato cercano. Ubicados en <strong>Cóbano, Puntarenas (Costa Rica)</strong>, estamos a pocos minutos en carro de playas icónicas como <em>Montezuma</em> y <em>Santa Teresa</em>, así como de la <em>Reserva Natural Cabo Blanco</em>.
+            </p>
+            <p>
+              Nuestras habitaciones son luminosas y funcionales, con <strong>aire acondicionado</strong>, <strong>baño privado</strong> y <strong>Wi-Fi de alta velocidad</strong>. Contamos con áreas verdes y espacios comunes que invitan al descanso.
+            </p>
+
+            <div class="stats-grid">
+              <div class="stat-item" data-aos="fade-up" data-aos-delay="200" aria-label="Habitaciones">
+                <div class="stat-number">
+                  <span data-purecounter-start="0" data-purecounter-end="77" data-purecounter-duration="1" class="purecounter"></span>
+                </div>
+                <div class="stat-label">Habitaciones</div>
+              </div>
+
+              <div class="stat-item" data-aos="fade-up" data-aos-delay="250" aria-label="Huéspedes felices">
+                <div class="stat-number">
+                  <span data-purecounter-start="1200" data-purecounter-end="1500" data-purecounter-duration="2" class="purecounter"></span>+
+                </div>
+                <div class="stat-label">Huéspedes felices</div>
+              </div>
+
+              <div class="stat-item" data-aos="fade-up" data-aos-delay="300" aria-label="Años de servicio">
+                <div class="stat-number">
+                  <span data-purecounter-start="0" data-purecounter-end="5" data-purecounter-duration="1" class="purecounter"></span>+
+                </div>
+                <div class="stat-label">Años de servicio</div>
+              </div>
+
+              <div class="stat-item" data-aos="fade-up" data-aos-delay="350" aria-label="Puntuación media">
+                <div class="stat-number">
+                  <span data-purecounter-start="0" data-purecounter-end="4" data-purecounter-duration="1" class="purecounter"></span>.<span data-purecounter-start="0" data-purecounter-end="7" data-purecounter-duration="1" class="purecounter"></span>/5
+                </div>
+                <div class="stat-label">Puntuación media</div>
+              </div>
+            </div>
+
+            <div class="cta-button">
+              <a href="{{ url_for('booking_search') }}" class="btn-primary">Conoce nuestras tarifas</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="about-visuals">
+            <div class="main-image" data-aos="zoom-in" data-aos-delay="200">
+              <img src="{{ url_for('static', filename='assets/img/Hotel Villa Grace Images/485734930_1169337461557124_6598950223652368976_n2.jpg') }}"
+                alt="Área común de Hotel Villa Grace" class="img-fluid">
+            </div>
+
+            <div class="features-grid">
+              <div class="feature-item" data-aos="fade-up" data-aos-delay="300">
+                <div class="feature-icon"><i class="bi bi-wifi"></i></div>
+                <h5>Wi-Fi gratis</h5>
+                <p>Cobertura en habitaciones y áreas comunes</p>
+              </div>
+              <div class="feature-item" data-aos="fade-up" data-aos-delay="350">
+                <div class="feature-icon"><i class="bi bi-snow"></i></div>
+                <h5>Aire acondicionado</h5>
+                <p>Descanso fresco y silencioso</p>
+              </div>
+              <div class="feature-item" data-aos="fade-up" data-aos-delay="400">
+                <div class="feature-icon"><i class="bi bi-car-front"></i></div>
+                <h5>Parqueo gratuito</h5>
+                <p>Estacionamiento dentro de la propiedad</p>
+              </div>
+              <div class="feature-item" data-aos="fade-up" data-aos-delay="450">
+                <div class="feature-icon"><i class="bi bi-brightness-high"></i></div>
+                <h5>Áreas verdes</h5>
+                <p>Entorno tranquilo con jardines</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row awards-section">
+        <div class="col-12">
+          <div class="section-header text-center" data-aos="fade-up" data-aos-delay="100">
+            <h4>¿Por qué elegirnos?</h4>
+            <p>Ubicación estratégica, limpieza impecable y trato cercano</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-3 col-md-6">
+          <div class="award-item" data-aos="fade-up" data-aos-delay="200">
+            <div class="award-icon"><i class="bi bi-geo-alt"></i></div>
+            <h6>Cerca de todo</h6>
+            <span>Playas, cascadas y parques naturales</span>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="award-item" data-aos="fade-up" data-aos-delay="250">
+            <div class="award-icon"><i class="bi bi-stars"></i></div>
+            <h6>Calidad-precio</h6>
+            <span>Opciones para todos los presupuestos</span>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="award-item" data-aos="fade-up" data-aos-delay="300">
+            <div class="award-icon"><i class="bi bi-heart"></i></div>
+            <h6>Atención familiar</h6>
+            <span>Soporte local y recomendaciones</span>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="award-item" data-aos="fade-up" data-aos-delay="350">
+            <div class="award-icon"><i class="bi bi-shield-check"></i></div>
+            <h6>Seguridad</h6>
+            <span>Ambiente tranquilo y seguro</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="rooms-showcase-about" class="rooms-showcase-about section">
+
+    <div class="container section-title" data-aos="fade-up">
+      <h2>Nuestras habitaciones</h2>
+      <p>Confort esencial para descansar y explorar la península</p>
+    </div>
+
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+      <div class="row">
+
+        {# OJO: aquí te recomiendo cambiar room-details.html por tu ruta real en Flask #}
+        {# Ej: url_for('room_detail', room_id=...) #}
+
+      </div>
+
+      <div class="text-center mt-5" data-aos="fade-up" data-aos-delay="500">
+        <a href="{{ url_for('rooms_html') }}" class="btn-view-all-rooms">Ver todas las habitaciones</a>
+      </div>
+    </div>
+
+  </section>
+
+{% endblock %}
